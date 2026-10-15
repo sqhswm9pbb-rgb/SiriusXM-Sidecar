@@ -1,0 +1,11 @@
+# Build output
+siriusxm-sidecar-server
+siriusxm-sidecar-server.exe
+siriusxm-sidecar-speaker
+siriusxm-sidecar-speaker.exe
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

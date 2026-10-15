@@ -1,0 +1,3 @@
+$ErrorActionPreference = 'Stop'
+go test ./...
+go build -o siriusxm-sidecar.exe ./server
