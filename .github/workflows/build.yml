@@ -85,4 +85,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG_NAME: ${{ github.ref_name }}
-        run: gh release create "$TAG_NAME" dist/* --title "$TAG_NAME" --generate-notes --verify-tag
+        run: gh release create "$TAG_NAME" dist/* sxm.py sxm.service index.html --title "$TAG_NAME" --generate-notes --notes "Download sxm.py, sxm.service, and index.html from the release assets and place them next to the executable." --verify-tag
