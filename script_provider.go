@@ -126,7 +126,7 @@ func (p *ScriptProvider) Start(ctx context.Context) error {
 		cmd = exec.CommandContext(
 			ctx,
 			p.python,
-			"-3",
+			"-3.14",
 			scriptPath,
 			p.user,
 			p.pass,
