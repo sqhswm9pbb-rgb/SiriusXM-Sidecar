@@ -126,8 +126,13 @@ jobs:
           fi
 
           for asset in dist/*; do
+            asset_name="${asset##*/}"
+            if gh release view "$TAG_NAME" --repo "$GITHUB_REPOSITORY" \
+              --json assets --jq '.assets[].name' | grep -Fxq "$asset_name"; then
+              continue
+            fi
             gh release upload "$TAG_NAME" "$asset" \
-              --repo "$GITHUB_REPOSITORY" --clobber
+              --repo "$GITHUB_REPOSITORY"
           done
 
           gh release edit "$TAG_NAME" --repo "$GITHUB_REPOSITORY" \
