@@ -1,4 +1,7 @@
 # Build output
+dist/
+siriusxm-sidecar-darwin-amd64
+siriusxm-sidecar-darwin-arm64
 siriusxm-sidecar-server
 siriusxm-sidecar-server.exe
 siriusxm-sidecar-speaker

@@ -3,6 +3,7 @@ package sidecar
 import (
 	"bufio"
 	"context"
+	_ "embed"
 	"fmt"
 	"io"
 	"net/http"
@@ -16,13 +17,16 @@ import (
 	"time"
 )
 
+//go:embed sxm.py
+var embeddedSXM []byte
+
 // ScriptProvider launches an external sxm.py process and treats the HLS server
 // it publishes as an opaque media source. The sidecar turns those local HLS
 // URLs into ordinary LAN MP3 HTTP streams for STR.
 type ScriptProvider struct {
 	mu       sync.RWMutex
 	stations []Station
-	source   map[string]string 
+	source   map[string]string
 	titles   map[string]string
 
 	python  string
@@ -32,9 +36,10 @@ type ScriptProvider struct {
 	hlsHost string
 	hlsPort int
 
-	cmd        *exec.Cmd
-	cancel     context.CancelFunc
-	httpClient *http.Client
+	cmd            *exec.Cmd
+	cancel         context.CancelFunc
+	embeddedScript string
+	httpClient     *http.Client
 }
 
 func NewScriptProvider(username, password string) *ScriptProvider {
@@ -44,17 +49,11 @@ func NewScriptProvider(username, password string) *ScriptProvider {
 		if os.PathSeparator == '\\' {
 			python = "py"
 		} else {
-			python = "python3"
-			if _, err := exec.LookPath(python); err != nil {
-				python = "python"
-			}
+			python = "python3.14"
 		}
 	}
 
 	script := strings.TrimSpace(os.Getenv("SXM_SCRIPT"))
-	if script == "" {
-		script = "sxm.py"
-	}
 
 	hlsHost := strings.TrimSpace(os.Getenv("SXM_HLS_HOST"))
 	if hlsHost == "" {
@@ -101,6 +100,23 @@ func NewScriptProvider(username, password string) *ScriptProvider {
 
 func (p *ScriptProvider) Start(ctx context.Context) error {
 	scriptPath := p.script
+	if scriptPath == "" {
+		f, err := os.CreateTemp("", "siriusxm-sidecar-sxm-*.py")
+		if err != nil {
+			return fmt.Errorf("prepare embedded sxm.py: %w", err)
+		}
+		if _, err := f.Write(embeddedSXM); err != nil {
+			_ = f.Close()
+			_ = os.Remove(f.Name())
+			return fmt.Errorf("write embedded sxm.py: %w", err)
+		}
+		if err := f.Close(); err != nil {
+			_ = os.Remove(f.Name())
+			return fmt.Errorf("close embedded sxm.py: %w", err)
+		}
+		scriptPath = f.Name()
+		p.embeddedScript = scriptPath
+	}
 
 	if !filepath.IsAbs(scriptPath) {
 		cwd, err := os.Getwd()
@@ -110,6 +126,10 @@ func (p *ScriptProvider) Start(ctx context.Context) error {
 	}
 
 	if _, err := os.Stat(scriptPath); err != nil {
+		if p.embeddedScript != "" {
+			_ = os.Remove(p.embeddedScript)
+			p.embeddedScript = ""
+		}
 		return fmt.Errorf("SXM script not found: %s", scriptPath)
 	}
 
@@ -147,6 +167,10 @@ func (p *ScriptProvider) Start(ctx context.Context) error {
 	cmd.Stderr = os.Stderr
 
 	if err := cmd.Start(); err != nil {
+		if p.embeddedScript != "" {
+			_ = os.Remove(p.embeddedScript)
+			p.embeddedScript = ""
+		}
 		return fmt.Errorf("start sxm.py: %w", err)
 	}
 
@@ -172,16 +196,23 @@ func (p *ScriptProvider) Start(ctx context.Context) error {
 	time.Sleep(750 * time.Millisecond)
 
 	if cmd.ProcessState != nil && cmd.ProcessState.Exited() {
+		if p.embeddedScript != "" {
+			_ = os.Remove(p.embeddedScript)
+			p.embeddedScript = ""
+		}
 		return fmt.Errorf("sxm.py exited during startup")
 	}
 
 	return nil
 }
 
-
 func (p *ScriptProvider) Stop() {
 	if p.cancel != nil {
 		p.cancel()
+	}
+	if p.embeddedScript != "" {
+		_ = os.Remove(p.embeddedScript)
+		p.embeddedScript = ""
 	}
 }
 

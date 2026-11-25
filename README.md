@@ -6,7 +6,7 @@ that a Bose speaker can fetch directly.
 
 ## Usage
 
-Place your existing `sxm.py` next to the executable, then run:
+The current `sxm.py` script is embedded in the executable. Run:
 
 ```bash
 ./siriusxm-sidecar USERNAME PASSWORD
@@ -29,29 +29,38 @@ Port 8090 is intentionally avoided because the Bose device already uses it.
 
 ## Requirements
 
-- Go 1.22+
-- Python 3
-- `sxm.py`
+- Python 3.14 with the `requests` package (`python3.14 -m pip install requests`)
 - FFmpeg with `ffmpeg` available on PATH
-- An authenticated SiriusXM account for the external script
+- An authenticated SiriusXM account
 
 The sidecar does **not** implement a SiriusXM protocol or decryption layer of
-its own. `sxm.py` is treated as an external media producer. Its command line is
-currently expected to be:
+its own. It runs the embedded `sxm.py` as a media producer. Set `SXM_SCRIPT` only
+if you want to override the embedded copy with a local script. The script is
+started with:
 
 ```text
-python sxm.py USERNAME PASSWORD
+python3.14 sxm.py USERNAME PASSWORD
 ```
+
+On Windows, install the package with `py -3.14 -m pip install requests`.
 
 If the script uses different names or locations, set:
 
 ```text
-SXM_PYTHON=python3
+SXM_PYTHON=python3.14
 SXM_SCRIPT=/path/to/sxm.py
 SXM_HLS_HOST=127.0.0.1
 SXM_HLS_PORT=9998
 FFMPEG=/path/to/ffmpeg
 ```
+
+### macOS disk image
+
+Download `SiriusXM-Sidecar-macos.dmg` from a release and open it. Double-click
+`Run Sidecar.command`; it selects the Intel or Apple Silicon executable and
+prompts for account details. The unsigned download may require approval in
+System Settings under **Privacy & Security**. Install Python 3.14 and FFmpeg
+first, then install the Python package with `python3.14 -m pip install requests`.
 
 The sidecar expects the script to publish HLS at paths matching the station
 catalog, e.g. `http://127.0.0.1:9998/101.m3u8`.
@@ -120,11 +129,12 @@ go build -o siriusxm-sidecar.exe ./server
 
 ## How the bridge connects to `sxm.py`
 
-The sidecar does not embed Python. It starts your existing script as a child
-process, passing the credentials exactly as two positional arguments:
+The sidecar embeds the Python script, but not the Python runtime. It starts the
+script as a child process, passing the credentials exactly as two positional
+arguments:
 
 ```text
-python sxm.py USERNAME PASSWORD
+python3.14 sxm.py USERNAME PASSWORD
 ```
 
 The existing relay setup used a local HLS publisher on port 9998 with station
