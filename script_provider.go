@@ -116,22 +116,21 @@ func (p *ScriptProvider) Start(ctx context.Context) error {
 	// sxm.py is responsible for starting its own HLS server.
 	//
 	// Windows:
-	//   py -3 sxm.py USERNAME PASSWORD -p 9998 -s
+	//   py -3 sxm.py USERNAME PASSWORD -p 9998
 	//
 	// Linux:
-	//   python3 sxm.py USERNAME PASSWORD -p 9998 -s
+	//   python3 sxm.py USERNAME PASSWORD -p 9998
 	var cmd *exec.Cmd
 
 	if os.PathSeparator == '\\' && strings.EqualFold(filepath.Base(p.python), "py") {
 		cmd = exec.CommandContext(
 			ctx,
 			p.python,
-			"-3",
+			"-3.14",
 			scriptPath,
 			p.user,
 			p.pass,
 			"-p", strconv.Itoa(p.hlsPort),
-			"-s",
 		)
 	} else {
 		cmd = exec.CommandContext(
@@ -141,7 +140,6 @@ func (p *ScriptProvider) Start(ctx context.Context) error {
 			p.user,
 			p.pass,
 			"-p", strconv.Itoa(p.hlsPort),
-			"-s",
 		)
 	}
 

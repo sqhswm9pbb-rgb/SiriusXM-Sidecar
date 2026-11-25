@@ -1,6 +1,6 @@
 # SiriusXM LAN Sidecar
 
-A small LAN HTTP sidecar for STR. It runs `sxm.py` on the network host, then
+A small LAN HTTP sidecar for [STR](https://github.com/JRpersonal/streborn). It runs `sxm.py` on the network host, then
 turns the HLS streams published by that script into ordinary HTTP MP3 streams
 that a Bose speaker can fetch directly.
 
