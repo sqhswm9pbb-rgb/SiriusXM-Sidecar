@@ -5,6 +5,12 @@ on:
     tags: ["v*"]
   pull_request:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing version tag to publish (optional)
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -97,7 +103,7 @@ jobs:
   release:
     name: Publish GitHub Release
     needs: [build, macos-installer]
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -116,7 +122,7 @@ jobs:
       - name: Publish release and attach binaries
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG_NAME: ${{ github.ref_name }}
+          TAG_NAME: ${{ inputs.release_tag || github.ref_name }}
           RELEASE_NOTES: "The current sxm.py script is embedded in the executable. macOS users can download SiriusXM-Sidecar-macos.dmg. Python 3.14 with the requests package and FFmpeg are required."
         run: |
           if ! gh release view "$TAG_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
